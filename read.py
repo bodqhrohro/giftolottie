@@ -11,6 +11,8 @@ from utils.scale import scale
 from export.svg import save as svg_save
 from export.tgs import save as tgs_save
 
+im = Image.open(sys.argv[1])
+
 frames = []
 i = 0
 for frame in ImageSequence.Iterator(im):
