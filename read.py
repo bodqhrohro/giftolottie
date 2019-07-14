@@ -26,20 +26,18 @@ os.remove(tmpfile.name)
 colors = image_specs['Color table values']
 size = image_specs['Image Size']
 
+# dedup colors
+i = 0
+while i < len(colors):
+    color = colors[i]
+    if color in colors[(i+1):]:
+        colors.pop(i)
+    else:
+        i = i + 1
+
 processed_frames = []
 
 for i, frame in enumerate(frames):
-    # dedup
-    """
-    i = 0
-    while i < len(colors):
-        color = colors[i]
-        if color in colors[(i+1):]:
-            colors.pop(i)
-        else:
-            i = i + 1
-    """
-
     all_rects = []
     for color in colors:
         if color == (254, 0, 254):
