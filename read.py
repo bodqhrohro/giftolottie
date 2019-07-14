@@ -86,4 +86,4 @@ for i in range(len(processed_frames) - 1, 0, -1):
                         frame.remove(shape)
                         break
 
-tgs_save(processed_frames, sys.argv[2])
+tgs_save(processed_frames, sys.argv[2], exts)
