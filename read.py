@@ -85,7 +85,6 @@ for i in range(len(processed_frames) - 1, 0, -1):
                     and prev_shape['color'] == shape['color'] \
                     and shape['startFrame'] == prev_shape['endFrame'] + 1:
                         prev_shape['endFrame'] = shape['endFrame']
-                        print('yay')
                         frame.remove(shape)
                         break
 
