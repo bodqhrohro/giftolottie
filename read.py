@@ -68,7 +68,7 @@ for i, frame in enumerate(frames):
         rect['startFrame'] = i
         rect['endFrame'] = i
 
-    svg_save(all_rects, "/tmp/smile%s.svg" % i)
+    # svg_save(all_rects, "/tmp/smile%s.svg" % i)
 
     processed_frames.append(all_rects)
 
