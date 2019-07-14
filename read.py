@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 import sys
-from PIL import Image, ImageSequence
+import os
+from subprocess import run
+from tempfile import NamedTemporaryFile
+
+import vendor.gif2numpy
 import numpy as np
 
 from pprint import pprint
@@ -11,23 +15,20 @@ from utils.scale import scale
 from export.svg import save as svg_save
 from export.tgs import save as tgs_save
 
-im = Image.open(sys.argv[1])
+tmpfile = NamedTemporaryFile(delete=False)
+run(["gifsicle", "-U", sys.argv[1]], stdout=tmpfile)
+tmpfile.close()
 
-frames = []
-i = 0
-for frame in ImageSequence.Iterator(im):
-    indexed = np.array(frame)
+frames, exts, image_specs = vendor.gif2numpy.convert(tmpfile.name, BGR2RGB=False)
 
-    palette = frame.getpalette()
-    colors = []
-    color = []
+os.remove(tmpfile.name)
 
-    for comp in palette:
-        color.append(comp)
-        if len(color) >= 3:
-            colors.append(color)
-            color = []
+colors = image_specs['Color table values']
+size = image_specs['Image Size']
 
+processed_frames = []
+
+for i, frame in enumerate(frames):
     # dedup
     """
     i = 0
@@ -39,14 +40,12 @@ for frame in ImageSequence.Iterator(im):
             i = i + 1
     """
 
-    stats = frame.getcolors()
-    stats.sort(key=lambda i: i[0], reverse=True)
-        
     all_rects = []
-    for stat in stats[1:]:
-        index = stat[1]
-        color = colors[index]
-        rects = rects_of_color(indexed, index, color)
+    for color in colors:
+        if color == (254, 0, 254):
+            continue
+
+        rects = rects_of_color(frame, color)
 
         rects.sort(key=lambda rect: rect['coords'][0])
         runs = []
@@ -63,8 +62,7 @@ for frame in ImageSequence.Iterator(im):
 
         all_rects.extend(runs)
 
-    sizeX = frame.size[0]
-    sizeY = frame.size[1]
+    sizeX, sizeY = size
     ratio = (512 / sizeY) if sizeX < sizeY else (512 / sizeX)
     all_rects = scale(all_rects, ratio)
 
@@ -74,13 +72,11 @@ for frame in ImageSequence.Iterator(im):
 
     svg_save(all_rects, "/tmp/smile%s.svg" % i)
 
-    frames.append(all_rects)
+    processed_frames.append(all_rects)
 
-    i = i + 1
-
-for i in range(len(frames) - 1, 0, -1):
-    frame = frames[i]
-    prev_frame = frames[i - 1]
+for i in range(len(processed_frames) - 1, 0, -1):
+    frame = processed_frames[i]
+    prev_frame = processed_frames[i - 1]
     for shape in frame:
         if shape['type'] == 'rect':
             for prev_shape in prev_frame:
@@ -89,7 +85,8 @@ for i in range(len(frames) - 1, 0, -1):
                     and prev_shape['color'] == shape['color'] \
                     and shape['startFrame'] == prev_shape['endFrame'] + 1:
                         prev_shape['endFrame'] = shape['endFrame']
+                        print('yay')
                         frame.remove(shape)
                         break
 
-tgs_save(frames, sys.argv[2])
+tgs_save(processed_frames, sys.argv[2])
