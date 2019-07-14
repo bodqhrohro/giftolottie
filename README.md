@@ -2,7 +2,7 @@ Usage
 =====
 
 ```
-read.py input.gif output.tgs
+python3 read.py input.gif output.tgs
 ```
 
 Installation
