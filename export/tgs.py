@@ -8,7 +8,7 @@ def frame_to_duration(frame, exts, end = False):
     duration = 0
     frame_count = frame + 1 if end else frame
     for i in range(frame_count):
-        duration += exts[i]['delay_time']
+        duration += exts[i]['delay_time'] if exts[i]['delay_time'] > 0 else 1
     return duration
 
 def gif_duration_to_fr(duration, scale_factor):
@@ -17,7 +17,7 @@ def gif_duration_to_fr(duration, scale_factor):
 def save(frames, name, exts):
     duration = 0
     for ext in exts:
-        duration += ext['delay_time']
+        duration += ext['delay_time'] if ext['delay_time'] > 0 else 1
     scale_factor = 1.0 if duration < MAX_DURATION else duration / MAX_DURATION
 
     tree = {
@@ -33,6 +33,8 @@ def save(frames, name, exts):
         'assets': [],
         'comps': [],
     }
+    if tree['op'] == 0:
+        tree['op'] = 1
 
     frame_seqs = []
     for frame in frames:
