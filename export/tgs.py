@@ -2,6 +2,7 @@ import gzip
 import json
 
 FPS = 60
+MAX_DURATION = FPS * 3
 
 def frame_to_duration(frame, exts, end = False):
     duration = 0
@@ -10,20 +11,21 @@ def frame_to_duration(frame, exts, end = False):
         duration += exts[i]['delay_time']
     return duration
 
-def gif_duration_to_fr(duration):
-    return duration / 100 * FPS
+def gif_duration_to_fr(duration, scale_factor):
+    return duration / 100.0 * FPS / scale_factor
 
 def save(frames, name, exts):
     duration = 0
     for ext in exts:
         duration += ext['delay_time']
+    scale_factor = 1.0 if duration < MAX_DURATION else duration / MAX_DURATION
 
     tree = {
         'tgs': 1,
         'v': '5.5.2',
         'fr': FPS,
         'ip': 0,
-        'op': gif_duration_to_fr(duration) - 1,
+        'op': round(gif_duration_to_fr(duration, scale_factor)) - 1,
         'w': 512,
         'h': 512,
         'nm': '',
@@ -46,7 +48,7 @@ def save(frames, name, exts):
                 frame_seqs.append([shape])
                 
 
-    tree['layers'] = [frame_seq_to_layer(frame_seq, exts) for frame_seq in frame_seqs]
+    tree['layers'] = [frame_seq_to_layer(frame_seq, exts, scale_factor) for frame_seq in frame_seqs]
 
     json_tree = json.dumps(tree)
     json_bytes = json_tree.encode('utf-8')
@@ -128,7 +130,7 @@ def shape_to_tgs(shape):
 
     return tgs_shape
 
-def frame_seq_to_layer(frame_seq, exts):
+def frame_seq_to_layer(frame_seq, exts, scale_factor):
     ref_shape = frame_seq[0]
     layer = {
         'ty': 4,
@@ -156,8 +158,8 @@ def frame_seq_to_layer(frame_seq, exts):
         },
         'ao': 0,
         'ddd': 0,
-        'ip': round(gif_duration_to_fr(frame_to_duration(ref_shape['startFrame'], exts))),
-        'op': round(gif_duration_to_fr(frame_to_duration(ref_shape['endFrame'], exts, end = True))) + 1,
+        'ip': round(gif_duration_to_fr(frame_to_duration(ref_shape['startFrame'], exts), scale_factor)),
+        'op': round(gif_duration_to_fr(frame_to_duration(ref_shape['endFrame'], exts, end = True), scale_factor)) + 1,
         'sr': 1,
         'nm': '',
     }
